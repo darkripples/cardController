@@ -13,17 +13,18 @@ def consoleLog(*args):
 
 
 class RF35Manage:
-    def __init__(self, dllPath="./mwrf32.dll"):
+    def __init__(self, dllPath="./mwrf32.dll", logPre=">"):
         """
         载入dll
         :param dllPath:
         """
         self.sessionId = None
+        self.logPre = logPre
         if os.path.exists(dllPath):
             self.dllObj = windll.LoadLibrary(dllPath)
-            consoleLog(">已载入", dllPath)
+            consoleLog(self.logPre, "已载入", dllPath)
         else:
-            consoleLog(">载入[", dllPath, "]失败，文件不存在")
+            consoleLog(self.logPre, "载入[", dllPath, "]失败，文件不存在")
 
     @err_check
     def connect(self, comNum=2, bps=115200):
@@ -38,9 +39,9 @@ class RF35Manage:
         resp = self.dllObj.rf_init(comNum, bps)
         if resp > 0:
             self.sessionId = resp
-            consoleLog(">打开连接", resp)
+            consoleLog(self.logPre, "打开连接", resp)
         else:
-            consoleLog(">连接com:", comNum, ",bps:", bps, ",失败：", resp)
+            consoleLog(self.logPre, "连接com:", comNum, ",bps:", bps, ",失败：", resp)
         return resp
 
     def getStatus(self):
@@ -70,9 +71,9 @@ class RF35Manage:
                 pwdBuffer[i] = nr
         resp = self.dllObj.rf_load_key(self.sessionId, keyAB, sectorNum, pwdBuffer)
         if resp == 0:
-            consoleLog(">加载密码成功", resp)
+            consoleLog(self.logPre, "加载密码成功", resp)
         else:
-            consoleLog(">加载密码失败", resp)
+            consoleLog(self.logPre, "加载密码失败", resp)
         return hex(resp)
 
     def authentication(self, keyAB=0, sectorNum=1):
@@ -86,9 +87,9 @@ class RF35Manage:
             return
         resp = self.dllObj.rf_authentication(self.sessionId, keyAB, sectorNum)
         if resp == 0:
-            consoleLog(">验证密码成功", resp)
+            consoleLog(self.logPre, "验证密码成功", resp)
         else:
-            consoleLog(">验证密码失败", resp)
+            consoleLog(self.logPre, "验证密码失败", resp)
         return hex(resp)
 
     def beep(self, msec=1000):
@@ -101,7 +102,7 @@ class RF35Manage:
             return
         resp = self.dllObj.rf_beep(self.sessionId, msec)
         consoleLog("蜂鸣:", resp)
-        consoleLog(">蜂鸣时间:", msec, "毫秒")
+        consoleLog(self.logPre, "蜂鸣时间:", msec, "毫秒")
 
     def read(self, sectorNum=1):
         """

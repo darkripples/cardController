@@ -105,6 +105,9 @@ if __name__ == "__main__":
     pars = sys.argv
     if len(pars) == 1:
         consoleLog("*请输入操作指令参数")
+        consoleLog("*\t指令1：初始化卡片并发卡")
+        consoleLog("*\t指令2：检测卡余量")
+        consoleLog("*\t指令3：从射频位弹出卡")
     elif len(pars) > 2:
         consoleLog("*指令参数有误")
     else:

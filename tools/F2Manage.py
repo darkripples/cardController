@@ -12,17 +12,18 @@ def consoleLog(*args):
 
 
 class F2Manage:
-    def __init__(self, dllPath="./F2API.dll"):
+    def __init__(self, dllPath="./F2API.dll", logPre=">"):
         """
         载入dll
         :param dllPath:
         """
         self.sessionId = None
+        self.logPre = logPre
         if os.path.exists(dllPath):
             self.dllObj = windll.LoadLibrary(dllPath)
-            consoleLog(">已载入", dllPath)
+            consoleLog(self.logPre, "已载入", dllPath)
         else:
-            consoleLog(">载入[", dllPath, "]失败，文件不存在")
+            consoleLog(self.logPre, "载入[", dllPath, "]失败，文件不存在")
 
     def connect(self, comNum=3, bps=9600, cAddr=0):
         """
@@ -38,9 +39,9 @@ class F2Manage:
         resp = self.dllObj.F2_Connect(comNum, bps, cAddr, out)
         if hex(resp) == hex(0):
             self.sessionId = out[0]
-            consoleLog(">连接成功com:", comNum, ";句柄:", self.sessionId)
+            consoleLog(self.logPre, "连接成功com:", comNum, ";句柄:", self.sessionId)
         else:
-            consoleLog(">连接com:", comNum, ",失败：", hex(resp))
+            consoleLog(self.logPre, "连接com:", comNum, ",失败：", hex(resp))
         return hex(resp)
 
     def moveToOut(self):
@@ -52,7 +53,7 @@ class F2Manage:
             return
         resp = self.dllObj.F3_MoveCard(self.sessionId, c_int(0x39))
         if hex(resp) == hex(0):
-            consoleLog(">移动卡到前端")
+            consoleLog(self.logPre, "移动卡到前端")
 
     def verifyPassWord(self, sectorNum=1, fWithKeyA=True, pwdList=None):
         """
@@ -69,9 +70,9 @@ class F2Manage:
                 pwdBuffer[i] = nr
         resp = self.dllObj.F3_MfVerifyPassword(self.sessionId, sectorNum, fWithKeyA, pwdBuffer)
         if hex(resp) == hex(0):
-            consoleLog(">校验卡成功")
+            consoleLog(self.logPre, "校验卡成功")
         else:
-            consoleLog(">校验卡密码失败:", hex(resp))
+            consoleLog(self.logPre, "校验卡密码失败:", hex(resp))
 
     def writeSector(self, sectorNum=1, bStartBlockNumber=1, bBytesToWrite=16, pbBufferWrite=None):
         """
@@ -85,19 +86,19 @@ class F2Manage:
         if not self.sessionId:
             return
         if not pbBufferWrite:
-            consoleLog(">写卡失败:", "写卡内容不可为空")
+            consoleLog(self.logPre, "写卡失败:", "写卡内容不可为空")
             return
         if len(pbBufferWrite) > 16:
-            consoleLog(">写卡失败:", "写卡内容过大")
+            consoleLog(self.logPre, "写卡失败:", "写卡内容过大")
             return
         pbBuffer = (c_byte * 16)(0x00)
         for i, nr in enumerate(pbBufferWrite):
             pbBuffer[i] = nr
         resp = self.dllObj.F3_MfWriteSector(self.sessionId, sectorNum, bStartBlockNumber, bBytesToWrite, pbBuffer)
         if hex(resp) == hex(0):
-            consoleLog(">写卡成功:", str(pbBufferWrite))
+            consoleLog(self.logPre, "写卡成功:", str(pbBufferWrite))
         else:
-            consoleLog(">写卡失败:", hex(resp))
+            consoleLog(self.logPre, "写卡失败:", hex(resp))
 
     def setPassword(self, sectorNum=1, newPwdList=None):
         """
@@ -113,14 +114,14 @@ class F2Manage:
             for i, nr in enumerate(newPwdList):
                 pwdBuffer[i] = nr
         else:
-            consoleLog(">新密码不可空")
+            consoleLog(self.logPre, "新密码不可空")
             return
         resp2 = self.dllObj.F3_MfUpdatePassword(self.sessionId, sectorNum, pwdBuffer)
         if hex(resp2) == hex(0):
-            consoleLog(">置密码成功")
+            consoleLog(self.logPre, "置密码成功")
             return
         else:
-            consoleLog(">置密码失败:", hex(resp2))
+            consoleLog(self.logPre, "置密码失败:", hex(resp2))
             return
 
     def initCard(self, sectorNum=1, bStartBlockNumber=1, defaultPwd=None, newPwdList=None):
@@ -151,9 +152,9 @@ class F2Manage:
         resp = self.dllObj.F3_Disconnect(self.sessionId)
         if hex(resp) == hex(0):
             self.sessionId = None
-            consoleLog(">断开连接成功")
+            consoleLog(self.logPre, "断开连接成功")
         else:
-            consoleLog(">断开连接失败:", hex(resp))
+            consoleLog(self.logPre, "断开连接失败:", hex(resp))
 
 
 def main():

@@ -1,0 +1,1 @@
+pyinstaller -F D:\pythonWorkspaces\final\cardController\cardControllerF3.py -p D:\pythonWorkspaces\final\cardController;
