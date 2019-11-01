@@ -15,17 +15,18 @@ def consoleLog(*args):
 
 
 class F3Manage:
-    def __init__(self, dllPath="./F3API.dll"):
+    def __init__(self, dllPath="./F3API.dll", logPre=">"):
         """
         载入dll
         :param dllPath:
         """
         self.sessionId = None
+        self.logPre = logPre
         if os.path.exists(dllPath):
             self.dllObj = windll.LoadLibrary(dllPath)
-            consoleLog("*已载入", dllPath)
+            consoleLog(self.logPre, "已载入", dllPath)
         else:
-            consoleLog("*载入[", dllPath, "]失败，文件不存在")
+            consoleLog(self.logPre, "载入[", dllPath, "]失败，文件不存在")
 
     def connect(self, comNum=3, bps=9600, cAddr=0):
         """
@@ -41,9 +42,9 @@ class F3Manage:
         resp = self.dllObj.F3_Connect(comNum, bps, cAddr, out)
         if hex(resp) == hex(0):
             self.sessionId = out[0]
-            consoleLog("*连接成功com:", comNum, ";句柄:", self.sessionId)
+            consoleLog(self.logPre, "连接成功com:", comNum, ";句柄:", self.sessionId)
         else:
-            consoleLog("*连接com:", comNum, ",失败：", hex(resp))
+            consoleLog(self.logPre, "连接com:", comNum, ",失败：", hex(resp))
         return hex(resp)
 
     def getSenserDetail(self):
@@ -57,23 +58,36 @@ class F3Manage:
         out = (c_byte * 12)(0x00)
         resp = self.dllObj.F3_GetSenserDetail(self.sessionId, out)
         if hex(resp) == hex(0):
-            # [49, 49, 49, 48, 48, 48, 49, 48, 48, 48, 48, 48]
-            consoleLog("*检测传感器信息:" + str(list(out)))
+            # [49, 49, 49, 48, (48), 48, (49), 48, 48, 48, 48, 48]
+            consoleLog(self.logPre, "检测传感器信息:" + str(list(out)))
             if 0x31 in out:
-                if out[4] == 0x30 and out[6] == 0x30:
-                    # 可能无卡or射频区有卡其他位置无卡
-                    consoleLog(">>无可用卡")
-                elif out[4] == 0x30 and out[6] == 0x31:
-                    consoleLog(">>卡余量不足")
-                else:
-                    consoleLog(">>卡余量充足")
+                # out[3]    出卡槽
+                # out[0],out[1],out[2]  射频位
+                # out[4]    备用卡槽 卡余量充足
+                # out[6]    备用卡槽 有卡
+                msg = ""
+                if out[4] == 0x30:
+                    if out[6] == 0x31:
+                        msg += ("卡余量不足" + ",")
+                    else:
+                        msg += ("无可用卡" + ",")
+                if out[3] == 0x31:
+                    msg += ("出卡槽有卡未取" + ",")
+                if out[0] == out[1] == out[2] == 0x31:
+                    msg += ("射频位有卡未处理完" + ",")
+                msg = msg[:-1]
+                consoleLog(self.logPre, msg)
+                return (hex(0), msg)
+                # 其他情况本程序未用到
             else:
                 # 所有传感器都无卡
-                consoleLog(">>无可用卡")
+                consoleLog(self.logPre, "无可用卡")
                 self.disconnect()
                 self.sessionId = None
+                return (hex(0), '无可用卡')
         else:
-            consoleLog("*检测传感器信息失败:", hex(resp))
+            consoleLog(self.logPre, "检测传感器信息失败:", hex(resp))
+        return (hex(resp), '')
 
     def moveCard(self, movePar=0x32):
         """
@@ -91,7 +105,8 @@ class F3Manage:
             return
         resp = self.dllObj.F3_MoveCard(self.sessionId, c_int(movePar))
         if hex(resp) == hex(0):
-            consoleLog("*移动卡成功")
+            consoleLog(self.logPre, "移动卡成功")
+        return hex(resp)
 
     def moveToReadyWrite(self):
         """
@@ -102,7 +117,8 @@ class F3Manage:
             return
         resp = self.dllObj.F3_MoveCard(self.sessionId, c_int(0x32))
         if hex(resp) == hex(0):
-            consoleLog("*移动卡到射频位")
+            consoleLog(self.logPre, "移动卡到射频位")
+        return hex(resp)
 
     def moveToOut(self):
         """
@@ -113,7 +129,8 @@ class F3Manage:
             return
         resp = self.dllObj.F3_MoveCard(self.sessionId, c_int(0x39))
         if hex(resp) == hex(0):
-            consoleLog("*移动卡到前端")
+            consoleLog(self.logPre, "移动卡到前端")
+        return hex(resp)
 
     def verifyPassWord(self, sectorNum=1, fWithKeyA=True, pwdList=None):
         """
@@ -130,9 +147,10 @@ class F3Manage:
                 pwdBuffer[i] = nr
         resp = self.dllObj.F3_MfVerifyPassword(self.sessionId, sectorNum, fWithKeyA, pwdBuffer)
         if hex(resp) == hex(0):
-            consoleLog("*校验卡成功")
+            consoleLog(self.logPre, "校验卡成功")
         else:
-            consoleLog("*校验卡密码失败:", hex(resp))
+            consoleLog(self.logPre, "校验卡密码失败:", hex(resp))
+        return hex(resp)
 
     def changePassword(self, sectorNum=1, fWithKeyA=True, oldPwdList=None, newPwdList=None):
         """
@@ -149,7 +167,7 @@ class F3Manage:
             for i, nr in enumerate(oldPwdList):
                 pwdBuffer[i] = nr
         else:
-            consoleLog("*旧密码不可空")
+            consoleLog(self.logPre, "旧密码不可空")
             return
         # 校验旧密码
         resp = self.dllObj.F3_MfVerifyPassword(self.sessionId, sectorNum, fWithKeyA, pwdBuffer)
@@ -160,17 +178,17 @@ class F3Manage:
                 for i, nr in enumerate(newPwdList):
                     pwdBuffer[i] = nr
             else:
-                consoleLog("*新密码不可空")
+                consoleLog(self.logPre, "新密码不可空")
                 return
             resp2 = self.dllObj.F3_MfUpdatePassword(self.sessionId, sectorNum, pwdBuffer)
             if hex(resp2) == hex(0):
-                consoleLog("*修改密码成功")
+                consoleLog(self.logPre, "修改密码成功")
                 return
             else:
-                consoleLog("*修改密码失败:", hex(resp2))
+                consoleLog(self.logPre, "修改密码失败:", hex(resp2))
                 return
         else:
-            consoleLog("*校验旧密码失败:", hex(resp))
+            consoleLog(self.logPre, "校验旧密码失败:", hex(resp))
 
     def setPassword(self, sectorNum=1, newPwdList=None):
         """
@@ -186,15 +204,15 @@ class F3Manage:
             for i, nr in enumerate(newPwdList):
                 pwdBuffer[i] = nr
         else:
-            consoleLog("*新密码不可空")
-            return
+            consoleLog(self.logPre, "新密码不可空")
+            return "999"
         resp2 = self.dllObj.F3_MfUpdatePassword(self.sessionId, sectorNum, pwdBuffer)
         if hex(resp2) == hex(0):
-            consoleLog("*置密码成功")
-            return
+            consoleLog(self.logPre, "置密码成功")
+            return hex(0)
         else:
-            consoleLog("*置密码失败:", hex(resp2))
-            return
+            consoleLog(self.logPre, "置密码失败:", hex(resp2))
+            return hex(resp2)
 
     def readSector(self, sectorNum=1, bStartBlockNumber=1, bBlocksToRead=1):
         """
@@ -211,10 +229,10 @@ class F3Manage:
         resp = self.dllObj.F3_MfReadSector(self.sessionId, sectorNum, bStartBlockNumber, pbBuffer,
                                            pcbLength)
         if hex(resp) == hex(0):
-            consoleLog("*读卡成功")
+            consoleLog(self.logPre, "读卡成功")
             return [hex((i + 256) % 256).upper() for i in list(pbBuffer)]
             # return list(pbBuffer)
-        consoleLog("*读卡失败:", hex(resp))
+        consoleLog(self.logPre, "读卡失败:", hex(resp))
         return []
 
     def writeSector(self, sectorNum=1, bStartBlockNumber=1, bBytesToWrite=16, pbBufferWrite=None):
@@ -229,19 +247,20 @@ class F3Manage:
         if not self.sessionId:
             return
         if not pbBufferWrite:
-            consoleLog("*写卡失败:", "写卡内容不可为空")
+            consoleLog(self.logPre, "写卡失败:", "写卡内容不可为空")
             return
         if len(pbBufferWrite) > 16:
-            consoleLog("*写卡失败:", "写卡内容过大")
+            consoleLog(self.logPre, "写卡失败:", "写卡内容过大")
             return
         pbBuffer = (c_byte * 16)(0x00)
         for i, nr in enumerate(pbBufferWrite):
             pbBuffer[i] = nr
         resp = self.dllObj.F3_MfWriteSector(self.sessionId, sectorNum, bStartBlockNumber, bBytesToWrite, pbBuffer)
         if hex(resp) == hex(0):
-            consoleLog("*写卡成功:", str(pbBufferWrite))
+            consoleLog(self.logPre, "写卡成功")
         else:
-            consoleLog("*写卡失败:", hex(resp))
+            consoleLog(self.logPre, "写卡失败:", hex(resp))
+        return hex(resp)
 
     def initSectorData(self, sectorNum=1, bStartBlockNumber=1):
         """
@@ -256,9 +275,10 @@ class F3Manage:
         pbBuffer = (c_byte * 16)(0x00)
         resp = self.dllObj.F3_MfWriteSector(self.sessionId, sectorNum, bStartBlockNumber, bBytesToWrite, pbBuffer)
         if hex(resp) == hex(0):
-            consoleLog("*清空卡数据成功")
+            consoleLog(self.logPre, "清空卡数据成功")
         else:
-            consoleLog("*清空卡数据失败:", hex(resp))
+            consoleLog(self.logPre, "清空卡数据失败:", hex(resp))
+        return hex(resp)
 
     def initCard(self, sectorNum=1, bStartBlockNumber=1, defaultPwd=None, newPwdList=None):
         """
@@ -271,12 +291,19 @@ class F3Manage:
         if not self.sessionId:
             return
         # 用默认密码校验
-        self.verifyPassWord(sectorNum=sectorNum, fWithKeyA=True, pwdList=defaultPwd)
+        r1 = self.verifyPassWord(sectorNum=sectorNum, fWithKeyA=True, pwdList=defaultPwd)
+        if r1 != hex(0):
+            return r1
         # 清空数据
         writeNr = [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]
-        self.writeSector(sectorNum=sectorNum, bStartBlockNumber=bStartBlockNumber, pbBufferWrite=writeNr)
+        r2 = self.writeSector(sectorNum=sectorNum, bStartBlockNumber=bStartBlockNumber, pbBufferWrite=writeNr)
+        if r2 != hex(0):
+            return r2
         # 重置密码
-        self.setPassword(sectorNum=sectorNum, newPwdList=newPwdList)
+        r3 = self.setPassword(sectorNum=sectorNum, newPwdList=newPwdList)
+        if r3 != hex(0):
+            return r3
+        return hex(0)
 
     def disconnect(self):
         """
@@ -288,13 +315,13 @@ class F3Manage:
         resp = self.dllObj.F3_Disconnect(self.sessionId)
         if hex(resp) == hex(0):
             self.sessionId = None
-            consoleLog("*断开连接成功")
+            consoleLog(self.logPre, "断开连接成功")
         else:
-            consoleLog("*断开连接失败:", hex(resp))
+            consoleLog(self.logPre, "断开连接失败:", hex(resp))
+        return hex(resp)
 
 
-def initCard():
-    confObj = read_conf("./conf/conf.ini")
+def initCard(confObj):
     # 扇区号
     sectorNum = confObj.CONF.sectorNum
     # 起始块号
@@ -356,7 +383,9 @@ def main():
     if ret != hex(0):
         return
     # 检测传感器信息:[49, 49, 49, 48, 48, 48, 49, 48, 48, 48, 48, 48]
-    f.getSenserDetail()
+    senserStatusResp, senserStatus = f.getSenserDetail()
+    if senserStatusResp != hex(0):
+        return
     # 移动卡到射频位置
     f.moveToReadyWrite()
 
