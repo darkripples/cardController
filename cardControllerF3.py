@@ -96,7 +96,8 @@ def work3():
 
 if __name__ == "__main__":
     """
-    python xxx.py 1
+    1)  python xxx.py 1 
+    2)  xxx.exe 1
     指令1：初始化卡片并发卡
     指令2: 检测卡余量
     指令3: 从射频位弹出卡
