@@ -37,15 +37,16 @@ class F3Manage:
         :return:
         """
         if not self.dllObj:
-            return
+            return "未载入dll文件"
         out = (c_ulong * 32)(0)
         resp = self.dllObj.F3_Connect(comNum, bps, cAddr, out)
         if hex(resp) == hex(0):
             self.sessionId = out[0]
             consoleLog(self.logPre, "连接成功com:", comNum, ";句柄:", self.sessionId)
+            return hex(resp)
         else:
             consoleLog(self.logPre, "连接com:", comNum, ",失败：", hex(resp))
-        return hex(resp)
+            return "连接com:" + comNum + ",失败：" + hex(resp)
 
     def getSenserDetail(self):
         """

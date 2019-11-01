@@ -37,6 +37,7 @@ def work1():
     # 连接com
     ret = f.connect(comNum=comNum, bps=bps, cAddr=cAddr)
     if ret != hex(0):
+        consoleLog("*", ret)
         return
 
     # 移动卡到射频位置
@@ -49,7 +50,8 @@ def work1():
     f.logPre = ">"
     if resp == hex(0):
         # 弹出卡
-        f.moveToOut()
+        if f.moveToOut() == hex(0):
+            consoleLog("*", "发卡成功,请取卡")
 
     # 关闭连接
     f.disconnect()
@@ -65,11 +67,12 @@ def work2():
     # 连接com
     ret = f.connect(comNum=comNum, bps=bps, cAddr=cAddr)
     if ret != hex(0):
+        consoleLog("*", ret)
         return
 
     # 检测传感器信息:[49, 49, 49, 48, 48, 48, 49, 48, 48, 48, 48, 48]
     senserStatusResp, senserStatus = f.getSenserDetail()
-    consoleLog("*" + senserStatus)
+    consoleLog("*", senserStatus)
 
     # 关闭连接
     f.disconnect()
@@ -85,6 +88,7 @@ def work3():
     # 连接com
     ret = f.connect(comNum=comNum, bps=bps, cAddr=cAddr)
     if ret != hex(0):
+        consoleLog("*", ret)
         return
 
     # 弹出卡
@@ -104,15 +108,15 @@ if __name__ == "__main__":
     """
     pars = sys.argv
     if len(pars) == 1:
-        consoleLog("*请输入操作指令参数")
-        consoleLog("*\t指令1：初始化卡片并发卡")
-        consoleLog("*\t指令2：检测卡余量")
-        consoleLog("*\t指令3：从射频位弹出卡")
+        consoleLog("*", "请输入操作指令参数")
+        consoleLog("*", "\t指令1：初始化卡片并发卡")
+        consoleLog("*", "\t指令2：检测卡余量")
+        consoleLog("*", "\t指令3：从射频位弹出卡")
     elif len(pars) > 2:
-        consoleLog("*指令参数有误")
+        consoleLog("*", "指令参数有误")
     else:
         cmdNum = pars[1]
         try:
             eval("work" + cmdNum + "()")
         except Exception as e:
-            consoleLog("*未识别的指令")
+            consoleLog("*", "未识别的指令")
