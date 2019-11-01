@@ -7,6 +7,7 @@ import os
 from ctypes import windll, c_ulong, c_byte, c_int
 from ez_utils import read_conf
 
+
 def consoleLog(*args):
     print(*args)
 
@@ -40,9 +41,10 @@ class F2Manage:
         if hex(resp) == hex(0):
             self.sessionId = out[0]
             consoleLog(self.logPre, "连接成功com:", comNum, ";句柄:", self.sessionId)
+            return hex(resp)
         else:
             consoleLog(self.logPre, "连接com:", comNum, ",失败：", hex(resp))
-        return hex(resp)
+            return "连接com:" + str(comNum) + ",失败：" + hex(resp)
 
     def moveToOut(self):
         """
@@ -160,9 +162,9 @@ class F2Manage:
 def main():
     confObj = read_conf("./conf/conf.ini")
     # 扇区号
-    sectorNum = confObj.CONF.sectorNum
+    sectorNum = int(confObj.CONF.sectorNum)
     # 起始块号
-    bStartBlockNumber = confObj.CONF.bStartBlockNumber
+    bStartBlockNumber = int(confObj.CONF.bStartBlockNumber)
     # 默认密码
     defaultPwd = eval(confObj.CONF.defaultPwd)
     # 新密码
@@ -170,11 +172,11 @@ def main():
     # dll文件
     dllPath = confObj.F2.dllPath
     # 串口
-    comNum = eval(confObj.F3.comNum)
+    comNum = int(confObj.F2.comNum)
     # 波特率
-    bps = eval(confObj.F3.bps)
+    bps = int(confObj.F2.bps)
     # 卡机地址
-    cAddr = eval(confObj.F3.cAddr)
+    cAddr = int(confObj.F2.cAddr)
 
     # 初始化
     f = F2Manage(dllPath)

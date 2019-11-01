@@ -46,7 +46,7 @@ class F3Manage:
             return hex(resp)
         else:
             consoleLog(self.logPre, "连接com:", comNum, ",失败：", hex(resp))
-            return "连接com:" + comNum + ",失败：" + hex(resp)
+            return "连接com:" + str(comNum) + ",失败：" + hex(resp)
 
     def getSenserDetail(self):
         """
@@ -72,8 +72,8 @@ class F3Manage:
                         msg += ("卡余量不足" + ",")
                     else:
                         msg += ("无可用卡" + ",")
-                if out[3] == 0x31:
-                    msg += ("出卡槽有卡未取" + ",")
+                # if out[3] == 0x31:
+                #    msg += ("出卡槽有卡未取" + ",")
                 if out[0] == out[1] == out[2] == 0x31:
                     msg += ("射频位有卡未处理完" + ",")
                 msg = msg[:-1]
@@ -324,9 +324,9 @@ class F3Manage:
 
 def initCard(confObj):
     # 扇区号
-    sectorNum = confObj.CONF.sectorNum
+    sectorNum = int(confObj.CONF.sectorNum)
     # 起始块号
-    bStartBlockNumber = confObj.CONF.bStartBlockNumber
+    bStartBlockNumber = int(confObj.CONF.bStartBlockNumber)
     # 默认密码
     defaultPwd = eval(confObj.CONF.defaultPwd)
     # 新密码
@@ -334,11 +334,11 @@ def initCard(confObj):
     # dll文件
     dllPath = confObj.F3.dllPath
     # 串口
-    comNum = eval(confObj.F3.comNum)
+    comNum = int(confObj.F3.comNum)
     # 波特率
-    bps = eval(confObj.F3.bps)
+    bps = int(confObj.F3.bps)
     # 卡机地址
-    cAddr = eval(confObj.F3.cAddr)
+    cAddr = int(confObj.F3.cAddr)
 
     # 初始化
     f = F3Manage(dllPath)
@@ -361,9 +361,9 @@ def initCard(confObj):
 def main():
     confObj = read_conf("./conf/conf.ini")
     # 扇区号
-    sectorNum = confObj.CONF.sectorNum
+    sectorNum = int(confObj.CONF.sectorNum)
     # 起始块号
-    bStartBlockNumber = confObj.CONF.bStartBlockNumber
+    bStartBlockNumber = int(confObj.CONF.bStartBlockNumber)
     # 默认密码
     defaultPwd = eval(confObj.CONF.defaultPwd)
     # 新密码
@@ -371,11 +371,11 @@ def main():
     # dll文件
     dllPath = confObj.F3.dllPath
     # 串口
-    comNum = eval(confObj.F3.comNum)
+    comNum = int(confObj.F3.comNum)
     # 波特率
-    bps = eval(confObj.F3.bps)
+    bps = int(confObj.F3.bps)
     # 卡机地址
-    cAddr = eval(confObj.F3.cAddr)
+    cAddr = int(confObj.F3.cAddr)
 
     # 初始化
     f = F3Manage(dllPath)
