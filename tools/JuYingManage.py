@@ -26,33 +26,18 @@ def crc16_1(x: str, invert: bool):
             a >>= 1
             if last == 1:
                 a ^= b
-    #s = hex(a).upper()
-    #return s[4:6] + s[2:4] if invert == True else s[2:4] + s[4:6]
+    # s = hex(a).upper()
+    # return s[4:6] + s[2:4] if invert == True else s[2:4] + s[4:6]
     s = struct.pack("H", a)
     return bytearray([i for i in s]).hex()
-
-
-
-def offBufMap(switchNum):
-    """
-    关闭功能的校验未有问题
-    :param switchNum:
-    :return:
-    """
-    m = {}
-    m[2] = b"\xFE\x05\x00\x01\x00\x00\x88\x05"
-    m[3] = b"\xFE\x05\x00\x02\x00\x00\x78\x05"
-    m[5] = b"\xFE\x05\x00\x04\x00\x00\x98\x04"
-    m[8] = b"\xFE\x05\x00\x07\x00\x00\x68\x04"
-    return m.get(switchNum)
 
 
 class JuYingManage:
     def __init__(self, confObjJuYing, logPre=">"):
         self.connObj = None
         self.ip = confObjJuYing.ip
-        self.port = confObjJuYing.port
-        self.deviceAddr = confObjJuYing.deviceAddr
+        self.port = int(confObjJuYing.port or 0)
+        self.deviceAddr = int(confObjJuYing.deviceAddr or 254)
         self.switchNum = confObjJuYing.switchNum or 8
         if not (self.ip or self.port or self.deviceAddr):
             consoleLog(self.logPre, "载入参数文件失败")
@@ -102,7 +87,7 @@ class JuYingManage:
         if way == "on":
             cmd = 255
             msg = "开启"
-        buf = struct.pack("B" * 6, 254,
+        buf = struct.pack("B" * 6, self.deviceAddr,
                           5,  # 5.单路控制
                           0, switchNum - 1,  # 要控制的开关位置
                           cmd, 0  # 255,0：开启指令； 0,0：关闭指令
@@ -112,9 +97,6 @@ class JuYingManage:
         check_buf = struct.pack("B" * 2,
                                 int(check_byte[:2], 16), int(check_byte[-2:], 16))
         buf = buf + check_buf
-        #if switchNum in [2, 3, 5, 8]:
-        #    # 这几个的关闭控制的校验有问题
-        #    buf = offBufMap(switchNum)
 
         self.connObj.send(buf)
         resp = self.connObj.recv(1024)
@@ -122,6 +104,43 @@ class JuYingManage:
             consoleLog(self.logPre, msg, switchNum, "路继电器成功")
         else:
             consoleLog(self.logPre, msg, switchNum, "路继电器失败:" + str(resp))
+
+    def showIOInInfo(self):
+        """
+        查询io输入状态
+        :return:
+        """
+        pass
+
+    def allControl(self, way):
+        """
+        控制全体
+        :param way: on/off
+        :return:
+        """
+        cmd = 0
+        msg = "关闭"
+        if way == "on":
+            cmd = 255
+            msg = "开启"
+        buf = struct.pack("B" * 8, self.deviceAddr,
+                          15,  # 0f返回指令：如果查询错误，返回 0x82
+                          0, 0,
+                          0, 8,  # 控制的继电器数量
+                          1,  # 发送命令字节数
+                          cmd  # 255：开启指令； 0：关闭指令
+                          )
+        # 获取校验位
+        check_byte = crc16_1(buf.decode("unicode-escape"), True)
+        check_buf = struct.pack("B" * 2,
+                                int(check_byte[:2], 16), int(check_byte[-2:], 16))
+        buf = buf + check_buf
+        self.connObj.send(buf)
+        resp = self.connObj.recv(1024)
+        if resp[1] == 15:
+            consoleLog(self.logPre, msg, "全部继电器成功")
+        else:
+            consoleLog(self.logPre, msg, "全部继电器失败:" + str(resp))
 
     def disconnect(self):
         """
@@ -145,21 +164,22 @@ def testBuf():
                       0, num - 1,
                       cmd, 0  # 255,0：开启指令； 0,0：关闭指令
                       )
+    # 全开
+    buf = struct.pack("B" * 8, device_addr,
+                      15,  # 0f返回指令：如果查询错误，返回 0x82
+                      0, 0,
+                      0, 8,  # 控制的继电器数量
+                      1,  # 发送命令字节数
+                      cmd  # 255：开启指令； 0：关闭指令
+                      )
     print("buf0:", buf)
-    buf1 = hex(device_addr) + hex(5) + hex(0) + hex(num - 1) + hex(cmd) + hex(0)
-    # print('buf1:', buf1)
-    x = [hex(device_addr), hex(5), hex(0), hex(num - 1), hex(cmd), hex(0)]
-    # print('x:', x)
-    # print('buf2:', buf1.replace("0x", "\\x"))
-    buf3 = str(buf)[1:]
-    print('buf3:', buf3)
     print('buf4:', buf.decode("unicode-escape"))
     # 校验位置
     # print('check:', '\xfe\x05\x00\x01\xff\x00')
 
     # check_byte = crc16_1('\xfe\x05\x00\x01\xff\x00', True)
     check_byte = crc16_1(buf.decode("unicode-escape"), True)
-    print("check_byte:",check_byte, int(check_byte[:2], 16), int(check_byte[-2:], 16))
+    print("check_byte:", check_byte, int(check_byte[:2], 16), int(check_byte[-2:], 16))
     b1 = struct.pack("B" * 2,
                      int(check_byte[:2], 16), int(check_byte[-2:], 16))
     print("crc16:", b1)

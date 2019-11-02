@@ -24,11 +24,14 @@ def workON(switchNum):
     # 连接
     ret = f.connect()
     if ret != 0:
-        consoleLog("*", ret)
+        consoleLog("*", "连接设备失败")
         return
 
     # 打开开关
-    f.openSwitch(switchNum)
+    if switchNum == 0:
+        f.allControl("on")
+    else:
+        f.openSwitch(switchNum)
 
     # 关闭连接
     f.disconnect()
@@ -45,11 +48,34 @@ def workOFF(switchNum):
     # 连接
     ret = f.connect()
     if ret != 0:
-        consoleLog("*", ret)
+        consoleLog("*", "连接设备失败")
         return
 
     # 关闭开关
-    f.offSwitch(switchNum)
+    if switchNum == 0:
+        f.allControl("off")
+    else:
+        f.offSwitch(switchNum)
+
+    # 关闭连接
+    f.disconnect()
+
+
+def workSHOWIO(nonePar):
+    """
+    查询io输入状态
+    :return:
+    """
+    # 初始化
+    f = JuYingManage(confObjJuYing)
+    # 连接
+    ret = f.connect()
+    if ret != 0:
+        consoleLog("*", "连接设备失败")
+        return
+
+    #
+    f.showIOInInfo()
 
     # 关闭连接
     f.disconnect()
@@ -59,8 +85,8 @@ if __name__ == "__main__":
     """
     1)  python xxx.py on/off 1
     2)  xxx.exe on/off 1
-    指令on：开启某路开关
-    指令off: 关闭某路开关
+    指令on：开启某路开关.0表示全体
+    指令off: 关闭某路开关.0表示全体
     """
     pars = sys.argv
     if len(pars) < 3:
@@ -75,4 +101,6 @@ if __name__ == "__main__":
         try:
             eval("work" + cmdNum + "(" + switchNum + ")")
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             consoleLog("*", "未识别的指令")
