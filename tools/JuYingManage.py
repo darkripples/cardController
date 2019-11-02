@@ -105,13 +105,6 @@ class JuYingManage:
         else:
             consoleLog(self.logPre, msg, switchNum, "路继电器失败:" + str(resp))
 
-    def showIOInInfo(self):
-        """
-        查询io输入状态
-        :return:
-        """
-        pass
-
     def allControl(self, way):
         """
         控制全体
@@ -141,6 +134,25 @@ class JuYingManage:
             consoleLog(self.logPre, msg, "全部继电器成功")
         else:
             consoleLog(self.logPre, msg, "全部继电器失败:" + str(resp))
+
+    def statusInfo(self):
+        """
+        查询状态
+        :return:
+        """
+        buf = struct.pack("B" * 6, self.deviceAddr,
+                          4,  # 4.查询
+                          3, 232,
+                          0, 14
+                          )
+        # 获取校验位
+        check_byte = crc16_1(buf.decode("unicode-escape"), True)
+        check_buf = struct.pack("B" * 2,
+                                int(check_byte[:2], 16), int(check_byte[-2:], 16))
+        buf = buf + check_buf
+        self.connObj.send(buf)
+        resp = self.connObj.recv(1024)
+        return resp
 
     def disconnect(self):
         """
