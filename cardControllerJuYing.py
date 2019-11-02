@@ -1,6 +1,6 @@
 # coding:utf8
 
-import sys, json
+import sys, json, time
 from tools.JuYingManage import JuYingManage
 from ez_utils import read_conf
 
@@ -91,6 +91,38 @@ def workSHOWIO(index):
     f.disconnect()
 
 
+def workLIVING(index):
+    """
+    循环查询io状态
+    :param nopar:
+    :return:
+    """
+    index = int(index)
+    # 初始化
+    f = JuYingManage(confObjJuYing)
+    # 连接
+    ret = f.connect()
+    if ret != 0:
+        consoleLog("*", "连接设备失败")
+        return
+
+    try:
+        while 1:
+            ret = f.statusInfo()
+            ioStatus = bin(ret[index])
+            ioMap = {1: '0', 2: '0', 3: '0', 4: '0',
+                     5: '0', 6: '0', 7: '0', 8: '0'}
+            for i, r in enumerate(ioStatus[::-1]):
+                if r == 'b':
+                    break
+                if r == '1':
+                    ioMap[i + 1] = "1"
+            consoleLog("*", json.dumps(ioMap, ensure_ascii=False))
+            time.sleep(1)
+    finally:
+        f.disconnect()
+
+
 if __name__ == "__main__":
     """
     1)  python xxx.py on/off 1
@@ -98,6 +130,7 @@ if __name__ == "__main__":
     指令on：开启某路开关.0表示全体
     指令off: 关闭某路开关.0表示全体
     指令showio：查询io状态，传11表示查询输入;传7表示查询开关状态
+    指令living：循环查询io状态，传11表示查询输入;传7表示查询开关状态
     """
     pars = sys.argv
     if len(pars) < 3:
