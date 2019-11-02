@@ -1,8 +1,11 @@
 # coding:utf8
 
 import sys
+import win32com.client as win
 from tools.F3Manage import F3Manage
 from ez_utils import read_conf
+
+speak = win.Dispatch("SAPI.SpVoice")
 
 confObj = read_conf("./conf/conf.ini")
 # 扇区号
@@ -55,6 +58,8 @@ def work1():
 
     # 关闭连接
     f.disconnect()
+
+    speak.Speak("制卡完成，请取卡")
 
 
 def work2():
