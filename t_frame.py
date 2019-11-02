@@ -3,6 +3,7 @@
 from ctypes import c_byte
 from ez_utils import read_conf
 from tools.F3Manage import F3Manage
+import pyttsx3
 
 def main():
     confObj = read_conf("./conf/conf.ini")
