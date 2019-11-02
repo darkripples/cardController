@@ -43,10 +43,23 @@ class F3Manage:
         if hex(resp) == hex(0):
             self.sessionId = out[0]
             consoleLog(self.logPre, "连接成功com:", comNum, ";句柄:", self.sessionId)
+            self.denieInsertion()
             return hex(resp)
         else:
             consoleLog(self.logPre, "连接com:", comNum, ",失败：", hex(resp))
             return "连接com:" + str(comNum) + ",失败：" + hex(resp)
+
+    def denieInsertion(self):
+        """
+        禁止前端进卡
+        :return:
+        """
+        if not self.sessionId:
+            return
+        resp = self.dllObj.F3_DenieInsertion(self.sessionId)
+        if hex(resp) == hex(0):
+            consoleLog(self.logPre, "禁止前端进卡")
+        return hex(resp)
 
     def getSenserDetail(self):
         """
@@ -54,7 +67,7 @@ class F3Manage:
         是否有卡:值为 0x31，表示有卡；值为 0x30，表示无卡
         :return:
         """
-        if not self.dllObj:
+        if not self.sessionId:
             return
         out = (c_byte * 12)(0x00)
         resp = self.dllObj.F3_GetSenserDetail(self.sessionId, out)
