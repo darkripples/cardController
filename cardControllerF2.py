@@ -132,6 +132,5 @@ if __name__ == "__main__":
             eval("work" + cmdNum + "()")
         except Exception as e:
             import traceback
-
             traceback.print_exc()
             consoleLog("*", "未识别的指令")

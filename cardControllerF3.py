@@ -30,14 +30,15 @@ def consoleLog(*args):
     print(*args)
 
 
-def work1(total, orderPlanId):
+def work1(total, cardId):
     """
     指令1：初始化卡片并发卡
-    :param total:
+    :param total: 需小于255吨
+    :param cardId:
     :return:
     """
     total = float(total)
-    orderPlanId = str(orderPlanId)
+    cardId = str(cardId)
     # 初始化
     f = F3Manage(dllPath)
     # 连接com
@@ -55,6 +56,17 @@ def work1(total, orderPlanId):
                       newPwdList=newPwd)
     f.logPre = ">"
     if resp == hex(0):
+        # 写卡
+        total1 = int(str(total).split(".")[0])
+        total2 = int(str(total).split(".")[1])
+
+        writeNr = [int(cardId[:2] or 0), int(cardId[2:4] or 0), int(cardId[4:6] or 0),
+                   int(cardId[6:8] or 0), int(cardId[8:10] or 0), int(cardId[10:12] or 0),
+                   int(cardId[12:14] or 0), int(cardId[14:16] or 0), int(cardId[16:18] or 0),
+                   int(cardId[18:20] or 0),
+                   0x0, 0x0, 0x0, 0x0,
+                   total1, total2]
+        f.writeSector(sectorNum=sectorNum, bStartBlockNumber=bStartBlockNumber, pbBufferWrite=writeNr)
         # 弹出卡
         if f.moveToOut() == hex(0):
             consoleLog("*", "发卡成功,请取卡")
@@ -106,6 +118,32 @@ def work3():
     f.disconnect()
 
 
+def work4():
+    """
+    读卡
+    :return:
+    """
+    # 初始化
+    f = F3Manage(dllPath)
+    # 连接com
+    ret = f.connect(comNum=comNum, bps=bps, cAddr=cAddr)
+    if ret != hex(0):
+        consoleLog("*", ret)
+        return
+
+    # 移动卡到射频位置
+    f.moveToReadyWrite()
+
+    # 校验卡密码
+    f.verifyPassWord(sectorNum=sectorNum, fWithKeyA=True, pwdList=defaultPwd)
+
+    cardTxt = f.readSector(sectorNum=sectorNum, bStartBlockNumber=bStartBlockNumber)
+    consoleLog("*", cardTxt)
+
+    # 关闭连接
+    f.disconnect()
+
+
 if __name__ == "__main__":
     """
     1)  python xxx.py 1 吨数 id
@@ -125,9 +163,12 @@ if __name__ == "__main__":
         try:
             if cmdNum == '1' and len(pars) == 4:
                 total = pars[-2]
-                orderPlanId = pars[-1]
-                eval("work" + cmdNum + "(" + total + ", '" + orderPlanId + "')")
+                cardId = pars[-1]
+                eval("work" + cmdNum + "(" + total + ", '" + cardId + "')")
             else:
                 eval("work" + cmdNum + "()")
         except Exception as e:
+            import traceback
+
+            traceback.print_exc()
             consoleLog("*", "未识别的指令")

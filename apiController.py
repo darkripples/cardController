@@ -14,7 +14,7 @@ def orderPlanList():
     :return:
     """
     data = {}
-    return orderPlanListReq(confObjApi.apiRoot + confObjApi.orderPlanList, data={})
+    return orderPlanListReq(confObjApi.apiRoot + confObjApi.orderPlanList, data=data)
 
 if __name__ == "__main__":
     print(orderPlanList())

@@ -244,7 +244,7 @@ class F3Manage:
                                            pcbLength)
         if hex(resp) == hex(0):
             consoleLog(self.logPre, "读卡成功")
-            return [hex((i + 256) % 256).upper() for i in list(pbBuffer)]
+            return [eval(hex((i + 256) % 256).upper()) for i in list(pbBuffer)]
             # return list(pbBuffer)
         consoleLog(self.logPre, "读卡失败:", hex(resp))
         return []
