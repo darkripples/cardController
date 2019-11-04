@@ -30,11 +30,14 @@ def consoleLog(*args):
     print(*args)
 
 
-def work1():
+def work1(total, orderPlanId):
     """
     指令1：初始化卡片并发卡
+    :param total:
     :return:
     """
+    total = float(total)
+    orderPlanId = str(orderPlanId)
     # 初始化
     f = F3Manage(dllPath)
     # 连接com
@@ -105,23 +108,26 @@ def work3():
 
 if __name__ == "__main__":
     """
-    1)  python xxx.py 1 
-    2)  xxx.exe 1
+    1)  python xxx.py 1 吨数 id
+    2)  xxx.exe 1 吨数 id
     指令1：初始化卡片并发卡
     指令2: 检测卡余量
     指令3: 从射频位弹出卡
     """
     pars = sys.argv
-    if len(pars) == 1:
+    if len(pars) < 2 or len(pars) > 4:
         consoleLog("*", "请输入操作指令参数")
         consoleLog("*", "\t指令1：初始化卡片并发卡")
         consoleLog("*", "\t指令2：检测卡余量")
         consoleLog("*", "\t指令3：从射频位弹出卡")
-    elif len(pars) > 2:
-        consoleLog("*", "指令参数有误")
     else:
         cmdNum = pars[1]
         try:
-            eval("work" + cmdNum + "()")
+            if cmdNum == '1' and len(pars) == 4:
+                total = pars[-2]
+                orderPlanId = pars[-1]
+                eval("work" + cmdNum + "(" + total + ", '" + orderPlanId + "')")
+            else:
+                eval("work" + cmdNum + "()")
         except Exception as e:
             consoleLog("*", "未识别的指令")
